@@ -11,184 +11,266 @@
   <div id="controls">
     <h1>Wave Visualizer</h1>
 
-    <!-- Main -->
+    <!-- Channel list -->
     <div class="section">
-      <span class="section-title">Main</span>
-
-      <div class="control-row">
-        <div class="control-label"><span>waveType</span></div>
-        <select id="ctrl-waveType">
-          <option value="sine">sine</option>
-          <option value="square">square</option>
-          <option value="triangle">triangle</option>
-          <option value="sawtooth">sawtooth</option>
-        </select>
-      </div>
-
-      <div class="control-row">
-        <div class="control-label">
-          <span>frequency</span>
-          <span class="control-value" id="val-frequency"></span>
+      <span class="section-title">Channels</span>
+      <div class="channel-list">
+        <div class="channel-row active" id="ch-row-0">
+          <span class="ch-dot" style="background:#ffffff"></span>
+          <span class="ch-name">CH 1</span>
+          <input type="checkbox" id="ctrl-ch0-enabled" checked>
         </div>
-        <input type="range" id="ctrl-frequency" min="0.5" max="10" step="0.1">
-      </div>
-
-      <div class="control-row">
-        <div class="control-label">
-          <span>amplitude</span>
-          <span class="control-value" id="val-amplitude"></span>
+        <div class="channel-row" id="ch-row-1">
+          <span class="ch-dot" style="background:#00d4ff"></span>
+          <span class="ch-name">CH 2</span>
+          <input type="checkbox" id="ctrl-ch1-enabled">
         </div>
-        <input type="range" id="ctrl-amplitude" min="0.05" max="1" step="0.01">
-      </div>
-
-      <div class="control-row">
-        <div class="control-label">
-          <span>strokeWidth</span>
-          <span class="control-value" id="val-strokeWidth"></span>
+        <div class="channel-row" id="ch-row-2">
+          <span class="ch-dot" style="background:#ffaa00"></span>
+          <span class="ch-name">CH 3</span>
+          <input type="checkbox" id="ctrl-ch2-enabled">
         </div>
-        <input type="range" id="ctrl-strokeWidth" min="0.1" max="50" step="0.1">
-      </div>
-    </div>
-
-    <!-- FM -->
-    <div class="section">
-      <div class="section-header">
-        <span class="section-title">FM</span>
-        <input type="checkbox" id="ctrl-fm-enabled">
-      </div>
-      <div class="section-controls" id="fm-controls">
-        <div class="control-row">
-          <div class="control-label">
-            <span>ratio</span>
-            <span class="control-value" id="val-fm-ratio"></span>
-          </div>
-          <input type="range" id="ctrl-fm-ratio" min="0.5" max="7" step="0.1">
-        </div>
-        <div class="control-row">
-          <div class="control-label">
-            <span>depth</span>
-            <span class="control-value" id="val-fm-depth"></span>
-          </div>
-          <input type="range" id="ctrl-fm-depth" min="0" max="2" step="0.05">
+        <div class="channel-row" id="ch-row-3">
+          <span class="ch-dot" style="background:#ff44aa"></span>
+          <span class="ch-name">CH 4</span>
+          <input type="checkbox" id="ctrl-ch3-enabled">
         </div>
       </div>
     </div>
 
-    <!-- Fold -->
-    <div class="section">
-      <div class="section-header">
-        <span class="section-title">Fold</span>
-        <input type="checkbox" id="ctrl-fold-enabled">
+    <!-- Channel editor -->
+    <div class="section" id="ch-editor">
+      <div class="ch-editor-header">
+        <span class="ch-dot" id="ch-editor-dot" style="background:#ffffff"></span>
+        <span class="section-title" id="ch-editor-title">CH 1</span>
       </div>
-      <div class="section-controls" id="fold-controls">
-        <div class="control-row">
-          <div class="control-label">
-            <span>threshold</span>
-            <span class="control-value" id="val-fold-threshold"></span>
-          </div>
-          <input type="range" id="ctrl-fold-threshold" min="0.1" max="1" step="0.01">
-        </div>
-        <div class="control-row">
-          <div class="control-label">
-            <span>iterations</span>
-            <span class="control-value" id="val-fold-iterations"></span>
-          </div>
-          <input type="range" id="ctrl-fold-iterations" min="1" max="8" step="1">
-        </div>
-      </div>
-    </div>
 
-    <!-- AM -->
-    <div class="section">
-      <div class="section-header">
-        <span class="section-title">AM</span>
-        <input type="checkbox" id="ctrl-am-enabled">
+      <!-- offsetY -->
+      <div class="control-row">
+        <div class="control-label">
+          <span>offsetY</span>
+          <span class="control-value" id="val-ch-offsetY"></span>
+        </div>
+        <input type="range" id="ctrl-ch-offsetY" min="-1" max="1" step="0.01">
       </div>
-      <div class="section-controls" id="am-controls">
+
+      <!-- Main -->
+      <div class="ch-subsection">
+        <span class="ch-sub-title">Main</span>
         <div class="control-row">
-          <div class="control-label">
-            <span>rate</span>
-            <span class="control-value" id="val-am-rate"></span>
-          </div>
-          <input type="range" id="ctrl-am-rate" min="0.1" max="6" step="0.05">
-        </div>
-        <div class="control-row">
-          <div class="control-label">
-            <span>depth</span>
-            <span class="control-value" id="val-am-depth"></span>
-          </div>
-          <input type="range" id="ctrl-am-depth" min="0" max="1" step="0.01">
-        </div>
-        <div class="control-row">
-          <div class="control-label"><span>shape</span></div>
-          <select id="ctrl-am-shape">
+          <div class="control-label"><span>waveType</span></div>
+          <select id="ctrl-ch-waveType">
             <option value="sine">sine</option>
+            <option value="square">square</option>
             <option value="triangle">triangle</option>
             <option value="sawtooth">sawtooth</option>
           </select>
         </div>
+        <div class="control-row">
+          <div class="control-label">
+            <span>frequency</span>
+            <span class="control-value" id="val-ch-frequency"></span>
+          </div>
+          <input type="range" id="ctrl-ch-frequency" min="0.5" max="10" step="0.1">
+        </div>
+        <div class="control-row">
+          <div class="control-label">
+            <span>amplitude</span>
+            <span class="control-value" id="val-ch-amplitude"></span>
+          </div>
+          <input type="range" id="ctrl-ch-amplitude" min="0.05" max="1" step="0.01">
+        </div>
+        <div class="control-row control-row--inline">
+          <div class="control-label"><span>strokeWidth</span></div>
+          <input type="number" id="ctrl-ch-strokeWidth" min="0.1" step="0.1">
+        </div>
+      </div>
+
+      <!-- FM -->
+      <div class="ch-subsection">
+        <div class="section-header">
+          <span class="section-title">FM</span>
+          <input type="checkbox" id="ctrl-ch-fm-enabled">
+        </div>
+        <div class="section-controls collapsed" id="ch-fm-controls">
+          <div class="control-row">
+            <div class="control-label">
+              <span>ratio</span>
+              <span class="control-value" id="val-ch-fm-ratio"></span>
+            </div>
+            <input type="range" id="ctrl-ch-fm-ratio" min="0.5" max="7" step="0.1">
+          </div>
+          <div class="control-row">
+            <div class="control-label">
+              <span>depth</span>
+              <span class="control-value" id="val-ch-fm-depth"></span>
+            </div>
+            <input type="range" id="ctrl-ch-fm-depth" min="0" max="2" step="0.05">
+          </div>
+        </div>
+      </div>
+
+      <!-- Fold -->
+      <div class="ch-subsection">
+        <div class="section-header">
+          <span class="section-title">Fold</span>
+          <input type="checkbox" id="ctrl-ch-fold-enabled">
+        </div>
+        <div class="section-controls collapsed" id="ch-fold-controls">
+          <div class="control-row">
+            <div class="control-label">
+              <span>threshold</span>
+              <span class="control-value" id="val-ch-fold-threshold"></span>
+            </div>
+            <input type="range" id="ctrl-ch-fold-threshold" min="0.1" max="1" step="0.01">
+          </div>
+          <div class="control-row">
+            <div class="control-label">
+              <span>iterations</span>
+              <span class="control-value" id="val-ch-fold-iterations"></span>
+            </div>
+            <input type="range" id="ctrl-ch-fold-iterations" min="1" max="8" step="1">
+          </div>
+        </div>
+      </div>
+
+      <!-- AM -->
+      <div class="ch-subsection">
+        <div class="section-header">
+          <span class="section-title">AM</span>
+          <input type="checkbox" id="ctrl-ch-am-enabled">
+        </div>
+        <div class="section-controls collapsed" id="ch-am-controls">
+          <div class="control-row">
+            <div class="control-label">
+              <span>rate</span>
+              <span class="control-value" id="val-ch-am-rate"></span>
+            </div>
+            <input type="range" id="ctrl-ch-am-rate" min="0.1" max="6" step="0.05">
+          </div>
+          <div class="control-row">
+            <div class="control-label">
+              <span>depth</span>
+              <span class="control-value" id="val-ch-am-depth"></span>
+            </div>
+            <input type="range" id="ctrl-ch-am-depth" min="0" max="1" step="0.01">
+          </div>
+          <div class="control-row">
+            <div class="control-label"><span>shape</span></div>
+            <select id="ctrl-ch-am-shape">
+              <option value="sine">sine</option>
+              <option value="triangle">triangle</option>
+              <option value="sawtooth">sawtooth</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Waveshaper -->
+      <div class="ch-subsection">
+        <div class="section-header">
+          <span class="section-title">Waveshaper</span>
+          <input type="checkbox" id="ctrl-ch-ws-enabled">
+        </div>
+        <div class="section-controls collapsed" id="ch-ws-controls">
+          <div class="control-row">
+            <div class="control-label"><span>curve</span></div>
+            <select id="ctrl-ch-ws-curve">
+              <option value="tanh">tanh (soft sat)</option>
+              <option value="hardclip">hard clip</option>
+              <option value="tube">tube (x - x³/3)</option>
+            </select>
+          </div>
+          <div class="control-row">
+            <div class="control-label">
+              <span>drive</span>
+              <span class="control-value" id="val-ch-ws-drive"></span>
+            </div>
+            <input type="range" id="ctrl-ch-ws-drive" min="1" max="10" step="0.1">
+          </div>
+        </div>
+      </div>
+
+      <!-- ADSR -->
+      <div class="ch-subsection">
+        <div class="section-header">
+          <span class="section-title">ADSR</span>
+          <input type="checkbox" id="ctrl-ch-adsr-enabled">
+        </div>
+        <div class="section-controls collapsed" id="ch-adsr-controls">
+          <div class="control-row">
+            <div class="control-label">
+              <span>attack</span>
+              <span class="control-value" id="val-ch-adsr-attack"></span>
+            </div>
+            <input type="range" id="ctrl-ch-adsr-attack" min="0" max="1" step="0.01">
+          </div>
+          <div class="control-row">
+            <div class="control-label">
+              <span>decay</span>
+              <span class="control-value" id="val-ch-adsr-decay"></span>
+            </div>
+            <input type="range" id="ctrl-ch-adsr-decay" min="0" max="1" step="0.01">
+          </div>
+          <div class="control-row">
+            <div class="control-label">
+              <span>sustain</span>
+              <span class="control-value" id="val-ch-adsr-sustain"></span>
+            </div>
+            <input type="range" id="ctrl-ch-adsr-sustain" min="0" max="1" step="0.01">
+          </div>
+          <div class="control-row">
+            <div class="control-label">
+              <span>release</span>
+              <span class="control-value" id="val-ch-adsr-release"></span>
+            </div>
+            <input type="range" id="ctrl-ch-adsr-release" min="0" max="1" step="0.01">
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- Waveshaper -->
+    <!-- CRT Mode -->
     <div class="section">
       <div class="section-header">
-        <span class="section-title">Waveshaper</span>
-        <input type="checkbox" id="ctrl-ws-enabled">
+        <span class="section-title">CRT Mode</span>
+        <input type="checkbox" id="ctrl-crt-enabled">
       </div>
-      <div class="section-controls" id="ws-controls">
+      <div class="section-controls collapsed" id="crt-controls">
         <div class="control-row">
-          <div class="control-label"><span>curve</span></div>
-          <select id="ctrl-ws-curve">
-            <option value="tanh">tanh (soft sat)</option>
-            <option value="hardclip">hard clip</option>
-            <option value="tube">tube (x - x³/3)</option>
+          <div class="control-label"><span>color</span></div>
+          <select id="ctrl-crt-color">
+            <option value="cyan">cyan</option>
+            <option value="green">green</option>
+            <option value="magenta">magenta</option>
+            <option value="amber">amber</option>
           </select>
         </div>
         <div class="control-row">
           <div class="control-label">
-            <span>drive</span>
-            <span class="control-value" id="val-ws-drive"></span>
+            <span>resolution</span>
+            <span class="control-value" id="val-crt-resolution"></span>
           </div>
-          <input type="range" id="ctrl-ws-drive" min="1" max="10" step="0.1">
-        </div>
-      </div>
-    </div>
-
-    <!-- ADSR -->
-    <div class="section">
-      <div class="section-header">
-        <span class="section-title">ADSR</span>
-        <input type="checkbox" id="ctrl-adsr-enabled">
-      </div>
-      <div class="section-controls" id="adsr-controls">
-        <div class="control-row">
-          <div class="control-label">
-            <span>attack</span>
-            <span class="control-value" id="val-adsr-attack"></span>
-          </div>
-          <input type="range" id="ctrl-adsr-attack" min="0" max="1" step="0.01">
+          <input type="range" id="ctrl-crt-resolution" min="80" max="640" step="8">
         </div>
         <div class="control-row">
           <div class="control-label">
-            <span>decay</span>
-            <span class="control-value" id="val-adsr-decay"></span>
+            <span>glow</span>
+            <span class="control-value" id="val-crt-glow"></span>
           </div>
-          <input type="range" id="ctrl-adsr-decay" min="0" max="1" step="0.01">
+          <input type="range" id="ctrl-crt-glow" min="0" max="1" step="0.05">
         </div>
-        <div class="control-row">
-          <div class="control-label">
-            <span>sustain</span>
-            <span class="control-value" id="val-adsr-sustain"></span>
-          </div>
-          <input type="range" id="ctrl-adsr-sustain" min="0" max="1" step="0.01">
+        <div class="sub-toggle-row">
+          <input type="checkbox" id="ctrl-crt-scanlines">
+          <label for="ctrl-crt-scanlines">scanlines</label>
         </div>
-        <div class="control-row">
-          <div class="control-label">
-            <span>release</span>
-            <span class="control-value" id="val-adsr-release"></span>
-          </div>
-          <input type="range" id="ctrl-adsr-release" min="0" max="1" step="0.01">
+        <div class="sub-toggle-row">
+          <input type="checkbox" id="ctrl-crt-graticule">
+          <label for="ctrl-crt-graticule">graticule</label>
+        </div>
+        <div class="sub-toggle-row">
+          <input type="checkbox" id="ctrl-crt-bezel">
+          <label for="ctrl-crt-bezel">bezel</label>
         </div>
       </div>
     </div>

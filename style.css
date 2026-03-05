@@ -140,8 +140,87 @@ canvas {
   pointer-events: none;
 }
 
+.sub-toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 9px;
+}
+
+.sub-toggle-row input[type="checkbox"] {
+  appearance: none;
+  width: 24px;
+  height: 12px;
+  background: #252525;
+  border-radius: 6px;
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+
+.sub-toggle-row input[type="checkbox"]:checked {
+  background: #1a3d1a;
+}
+
+.sub-toggle-row input[type="checkbox"]::after {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: #4a4a4a;
+  border-radius: 50%;
+  top: 2px;
+  left: 2px;
+  transition: left 0.15s, background 0.15s;
+}
+
+.sub-toggle-row input[type="checkbox"]:checked::after {
+  left: 14px;
+  background: #5c5;
+}
+
+.sub-toggle-row label {
+  color: #666;
+  font-size: 11px;
+  cursor: pointer;
+  user-select: none;
+}
+
 .control-row {
   margin-bottom: 10px;
+}
+
+.control-row--inline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.control-row--inline .control-label {
+  margin-bottom: 0;
+}
+
+input[type="number"] {
+  width: 64px;
+  background: #1a1a1a;
+  color: #ccc;
+  border: 1px solid #2a2a2a;
+  padding: 4px 6px;
+  font-family: monospace;
+  font-size: 12px;
+  border-radius: 3px;
+  outline: none;
+  appearance: textfield;
+}
+
+input[type="number"]:hover {
+  border-color: #3a3a3a;
+}
+
+input[type="number"]:focus {
+  border-color: #555;
+  color: #fff;
 }
 
 .control-label {
@@ -195,4 +274,117 @@ select {
 select:hover {
   border-color: #3a3a3a;
   color: #bbb;
+}
+
+/* ── Channel list ──────────────────────────────────────── */
+.channel-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.channel-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.1s;
+  border-left: 2px solid transparent;
+}
+
+.channel-row:hover {
+  background: #161616;
+}
+
+.channel-row.active {
+  background: #1a1a1a;
+  border-left-color: #333;
+}
+
+.ch-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.ch-name {
+  flex: 1;
+  font-size: 11px;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+}
+
+.channel-row input[type="checkbox"] {
+  appearance: none;
+  width: 30px;
+  height: 15px;
+  background: #252525;
+  border-radius: 8px;
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+
+.channel-row input[type="checkbox"]:checked {
+  background: #1a3d1a;
+}
+
+.channel-row input[type="checkbox"]::after {
+  content: '';
+  position: absolute;
+  width: 11px;
+  height: 11px;
+  background: #4a4a4a;
+  border-radius: 50%;
+  top: 2px;
+  left: 2px;
+  transition: left 0.15s, background 0.15s;
+}
+
+.channel-row input[type="checkbox"]:checked::after {
+  left: 17px;
+  background: #5c5;
+}
+
+/* ── Channel editor ────────────────────────────────────── */
+.ch-editor-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding-bottom: 10px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid #252525;
+}
+
+.ch-subsection {
+  margin-bottom: 14px;
+}
+
+.ch-sub-title {
+  display: block;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #555;
+  padding-bottom: 5px;
+  border-bottom: 1px solid #1a1a1a;
+  margin-bottom: 8px;
+}
+
+/* Tone down sub-section toggle headers inside the channel editor */
+.ch-subsection .section-header {
+  border-bottom-color: #1a1a1a;
+  padding-bottom: 5px;
+  margin-bottom: 8px;
+}
+
+.ch-subsection .section-header .section-title {
+  font-size: 9px;
+  color: #666;
 }
