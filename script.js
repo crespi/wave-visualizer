@@ -1,15 +1,20 @@
 // ── Channel defaults ──────────────────────────────────────
-const CHANNEL_COLORS = ['#ffffff', '#00d4ff', '#ffaa00', '#ff44aa'];
+const CHANNEL_COLORS = [
+  { l: 1,    c: 0,    h: 0   },  // white
+  { l: 0.82, c: 0.14, h: 217 },  // cyan
+  { l: 0.78, c: 0.17, h: 78  },  // amber
+  { l: 0.65, c: 0.24, h: 350 },  // pink
+];
 
 function defaultChannel(i) {
   return {
     enabled:     i === 0,
-    color:       CHANNEL_COLORS[i],
+    color:       { ...CHANNEL_COLORS[i] },
     offsetY:     0,
     waveType:    ['sine', 'sawtooth', 'triangle', 'square'][i],
     frequency:   3,
     amplitude:   0.7,
-    strokeWidth: 1,
+    strokeWidth: 5,
     fm:   { enabled: false, ratio: 1.6,  depth: 0.4 },
     fold: { enabled: false, threshold: 0.3, iterations: 6 },
     am:   { enabled: false, rate: 2,     depth: 1,    shape: 'sine' },
@@ -24,12 +29,9 @@ const CONFIG = {
 
   crt: {
     enabled:    false,
-    color:      'cyan',
     resolution: 320,
     glow:       0.7,
     scanlines:  true,
-    graticule:  true,
-    bezel:      true,
   },
 };
 
@@ -44,9 +46,9 @@ const waveFunctions = {
 // ── Canvas setup ──────────────────────────────────────────
 const canvas = document.getElementById('scope');
 const ctx = canvas.getContext('2d');
-const size = 1080;
-canvas.width = size;
-canvas.height = size;
+let canvasW = 1080, canvasH = 1080;
+canvas.width = canvasW;
+canvas.height = canvasH;
 
 // ── Modulation helpers ────────────────────────────────────
 function waveFold(value, threshold, iterations) {
@@ -76,94 +78,101 @@ function adsrEnvelope(t, attack, decay, sustain, release) {
   return 0;
 }
 
-// ── CRT palette + helpers ─────────────────────────────────
-const CRT_PALETTE = {
-  cyan:    '#00ffff',
-  green:   '#00ff00',
-  magenta: '#ff00ff',
-  amber:   '#ffaa00',
-};
-
-function hexToRgba(hex, a) {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return `rgba(${r},${g},${b},${a})`;
+// ── Color helpers ─────────────────────────────────────────
+function chColorCss(ch) {
+  return `oklch(${ch.color.l} ${ch.color.c} ${ch.color.h})`;
 }
+
+// ── CRT helpers ───────────────────────────────────────────
 
 function quantizePoints(points) {
   const vw = CONFIG.crt.resolution;
-  const vh = Math.round(vw * 0.75);
-  const sx = size / vw;
-  const sy = size / vh;
+  const vh = Math.round(vw * canvasH / canvasW);
+  const sx = canvasW / vw;
+  const sy = canvasH / vh;
   return points.map(({ x, y }) => ({
     x: Math.round(x / sx) * sx,
     y: Math.round(y / sy) * sy,
   }));
 }
 
-function drawGraticule(target) {
-  const color = CRT_PALETTE[CONFIG.crt.color] || CRT_PALETTE.cyan;
-  const divs = 8;
-  target.lineWidth = 1;
-  target.setLineDash([3, 6]);
-  for (let i = 1; i < divs; i++) {
-    const p = (i / divs) * size;
-    target.strokeStyle = hexToRgba(color, i === divs / 2 ? 0.28 : 0.14);
-    target.beginPath(); target.moveTo(p, 0); target.lineTo(p, size); target.stroke();
-    target.beginPath(); target.moveTo(0, p); target.lineTo(size, p); target.stroke();
-  }
-  target.setLineDash([]);
-}
-
-function strokePath(target, points) {
-  target.beginPath();
-  target.moveTo(points[0].x, points[0].y);
-  for (let i = 1; i < points.length; i++) target.lineTo(points[i].x, points[i].y);
-  target.stroke();
-}
+let glowCanvas = null;
 
 function drawCRTWave(target, points, ch) {
   const gi = CONFIG.crt.glow;
-  target.lineCap = 'square';
-  target.lineJoin = 'miter';
+  const vw = CONFIG.crt.resolution;
+  const vh = Math.round(vw * canvasH / canvasW);
+  const cw = canvasW / vw;
+  const rh = canvasH / vh;
 
-  if (gi > 0) {
-    target.filter = `blur(${Math.round(18 * gi)}px)`;
-    target.strokeStyle = hexToRgba(ch.color, 0.45 * gi);
-    target.lineWidth = ch.strokeWidth * 4;
-    strokePath(target, points);
+  const color = chColorCss(ch);
+  const seen = new Set();
+  const cells = [];
 
-    target.filter = `blur(${Math.round(6 * gi)}px)`;
-    target.strokeStyle = hexToRgba(ch.color, 0.75 * gi);
-    target.lineWidth = ch.strokeWidth * 2;
-    strokePath(target, points);
-
-    target.filter = 'none';
+  function addCell(x, y) {
+    const key = `${x},${y}`;
+    if (!seen.has(key)) { seen.add(key); cells.push({ x, y }); }
   }
 
-  target.strokeStyle = ch.color;
-  target.lineWidth = ch.strokeWidth;
-  strokePath(target, points);
+  const thick = Math.max(1, Math.round(ch.strokeWidth));
+  const half  = Math.floor(thick / 2);
+
+  let prev = null;
+  for (const pt of points) {
+    if (prev !== null && Math.abs(pt.y - prev.y) > rh * 1.5) {
+      const iy1 = Math.round(prev.y / rh);
+      const iy2 = Math.round(pt.y / rh);
+      const step = iy2 > iy1 ? 1 : -1;
+      for (let i = iy1 + step; step > 0 ? i < iy2 : i > iy2; i += step) {
+        addCell(pt.x, i * rh);
+      }
+    }
+    const iy = Math.round(pt.y / rh);
+    for (let d = -half; d <= half; d++) addCell(pt.x, (iy + d) * rh);
+    prev = pt;
+  }
+
+  if (gi > 0) {
+    if (!glowCanvas) { glowCanvas = document.createElement('canvas'); glowCanvas.width = canvasW; glowCanvas.height = canvasH; }
+    const gc = glowCanvas.getContext('2d');
+    gc.clearRect(0, 0, canvasW, canvasH);
+    gc.fillStyle = color;
+    for (const { x, y } of cells) gc.fillRect(x, y, cw, rh);
+
+    target.filter = `blur(${Math.round(cw * 2 * gi)}px)`;
+    target.globalAlpha = 0.45 * gi;
+    target.drawImage(glowCanvas, 0, 0);
+
+    target.filter = `blur(${Math.round(cw * 0.6 * gi)}px)`;
+    target.globalAlpha = 0.75 * gi;
+    target.drawImage(glowCanvas, 0, 0);
+
+    target.filter = 'none';
+    target.globalAlpha = 1;
+  }
+
+  target.fillStyle = color;
+  for (const { x, y } of cells) target.fillRect(x, y, cw, rh);
 }
 
-function drawScanlines(target) {
-  target.fillStyle = 'rgba(0,0,0,0.28)';
-  for (let y = 0; y < size; y += 3) target.fillRect(0, y, size, 1);
-}
-
-function drawBezel(target) {
-  const grad = target.createRadialGradient(size / 2, size / 2, size * 0.32, size / 2, size / 2, size * 0.74);
-  grad.addColorStop(0, 'rgba(0,0,0,0)');
-  grad.addColorStop(1, 'rgba(0,0,0,0.65)');
-  target.fillStyle = grad;
-  target.fillRect(0, 0, size, size);
-
-  const color = CRT_PALETTE[CONFIG.crt.color] || CRT_PALETTE.cyan;
-  target.strokeStyle = hexToRgba(color, 0.18);
-  target.lineWidth = 6;
+function drawLCDGrid(target) {
+  const vw = CONFIG.crt.resolution;
+  const vh = Math.round(vw * canvasH / canvasW);
+  const cw = canvasW / vw;
+  const rh = canvasH / vh;
+  target.strokeStyle = 'rgba(0,0,0,0.5)';
+  target.lineWidth = 1;
   target.beginPath();
-  target.roundRect(3, 3, size - 6, size - 6, 20);
+  for (let col = 0; col <= vw; col++) {
+    const x = col * cw;
+    target.moveTo(x, 0);
+    target.lineTo(x, canvasH);
+  }
+  for (let row = 0; row <= vh; row++) {
+    const y = row * rh;
+    target.moveTo(0, y);
+    target.lineTo(canvasW, y);
+  }
   target.stroke();
 }
 
@@ -171,16 +180,21 @@ function drawBezel(target) {
 function computeWave(ch) {
   const { waveType, frequency, amplitude, offsetY } = ch;
   const waveFn = waveFunctions[waveType];
-  const centerY = size / 2 + offsetY * (size / 2);
-  const ampPx = (size / 2) * amplitude;
+  const centerY = canvasH / 2 + offsetY * (canvasH / 2);
+  const ampPx = (canvasH / 2) * amplitude;
+
+  // Hoist loop-invariant lookups
+  const wsCurve    = ch.ws.enabled ? (waveshapeCurves[ch.ws.curve] || waveshapeCurves.tanh) : null;
+  const wsTanhDrv  = ch.ws.enabled ? Math.tanh(ch.ws.drive) : 1;
+  const amFn       = ch.am.enabled ? (waveFunctions[ch.am.shape] || waveFunctions.sine) : null;
 
   const points = [];
-  for (let px = 0; px <= size; px++) {
-    const baseX = (px / size) * 2 * Math.PI * frequency;
+  for (let px = 0; px <= canvasW; px++) {
+    const baseX = (px / canvasW) * 2 * Math.PI * frequency;
 
     let x = baseX;
     if (ch.fm.enabled) {
-      const modX = (px / size) * 2 * Math.PI * frequency * ch.fm.ratio;
+      const modX = (px / canvasW) * 2 * Math.PI * frequency * ch.fm.ratio;
       x = baseX + ch.fm.depth * Math.sin(modX);
     }
 
@@ -191,19 +205,18 @@ function computeWave(ch) {
     }
 
     if (ch.ws.enabled) {
-      const curve = waveshapeCurves[ch.ws.curve] || waveshapeCurves.tanh;
-      sample = curve(sample * ch.ws.drive) / Math.tanh(ch.ws.drive);
+      sample = wsCurve(sample * ch.ws.drive) / wsTanhDrv;
     }
 
     if (ch.am.enabled) {
-      const lfoX = (px / size) * 2 * Math.PI * ch.am.rate;
-      const lfo = ((waveFunctions[ch.am.shape] || waveFunctions.sine)(lfoX) + 1) / 2;
+      const lfoX = (px / canvasW) * 2 * Math.PI * ch.am.rate;
+      const lfo = (amFn(lfoX) + 1) / 2;
       sample *= 1 - ch.am.depth * (1 - lfo);
     }
 
     if (ch.adsr.enabled) {
       const { attack, decay, sustain, release } = ch.adsr;
-      sample *= adsrEnvelope(px / size, attack, decay, sustain, release);
+      sample *= adsrEnvelope(px / canvasW, attack, decay, sustain, release);
     }
 
     points.push({ x: px, y: centerY - sample * ampPx });
@@ -213,7 +226,7 @@ function computeWave(ch) {
 
 // ── Draw wave (vector mode) ───────────────────────────────
 function drawWave(target, points, ch) {
-  target.strokeStyle = ch.color;
+  target.strokeStyle = chColorCss(ch);
   target.lineWidth = ch.strokeWidth;
   target.lineCap = 'round';
   target.lineJoin = 'round';
@@ -224,17 +237,22 @@ function drawWave(target, points, ch) {
 }
 
 // ── Render ────────────────────────────────────────────────
+let renderPending = false;
+function scheduleRender() {
+  if (renderPending) return;
+  renderPending = true;
+  requestAnimationFrame(() => { renderPending = false; render(); });
+}
+
 function render() {
   ctx.fillStyle = '#000';
-  ctx.fillRect(0, 0, size, size);
+  ctx.fillRect(0, 0, canvasW, canvasH);
 
   const active = CONFIG.channels.filter(ch => ch.enabled);
 
   if (CONFIG.crt.enabled) {
-    if (CONFIG.crt.graticule) drawGraticule(ctx);
     for (const ch of active) drawCRTWave(ctx, quantizePoints(computeWave(ch)), ch);
-    if (CONFIG.crt.scanlines) drawScanlines(ctx);
-    if (CONFIG.crt.bezel) drawBezel(ctx);
+    if (CONFIG.crt.scanlines) drawLCDGrid(ctx);
   } else {
     for (const ch of active) drawWave(ctx, computeWave(ch), ch);
   }
@@ -243,19 +261,17 @@ function render() {
 // ── Export as PNG ─────────────────────────────────────────
 function getExportBlob() {
   const offscreen = document.createElement('canvas');
-  offscreen.width = size;
-  offscreen.height = size;
+  offscreen.width = canvasW;
+  offscreen.height = canvasH;
   const offCtx = offscreen.getContext('2d');
 
   const active = CONFIG.channels.filter(ch => ch.enabled);
 
   if (CONFIG.crt.enabled) {
     offCtx.fillStyle = '#000';
-    offCtx.fillRect(0, 0, size, size);
-    if (CONFIG.crt.graticule) drawGraticule(offCtx);
+    offCtx.fillRect(0, 0, canvasW, canvasH);
     for (const ch of active) drawCRTWave(offCtx, quantizePoints(computeWave(ch)), ch);
-    if (CONFIG.crt.scanlines) drawScanlines(offCtx);
-    if (CONFIG.crt.bezel) drawBezel(offCtx);
+    if (CONFIG.crt.scanlines) drawLCDGrid(offCtx);
   } else {
     for (const ch of active) drawWave(offCtx, computeWave(ch), ch);
   }
@@ -285,12 +301,12 @@ let dragState = null;
 
 canvas.addEventListener('mousedown', e => {
   const rect = canvas.getBoundingClientRect();
-  const mouseY = (e.clientY - rect.top) * (size / rect.height);
+  const mouseY = (e.clientY - rect.top) * (canvasH / rect.height);
 
   let bestIdx = -1, bestDist = Infinity;
   CONFIG.channels.forEach((ch, i) => {
     if (!ch.enabled) return;
-    const d = Math.abs(mouseY - (size / 2 + ch.offsetY * (size / 2)));
+    const d = Math.abs(mouseY - (canvasH / 2 + ch.offsetY * (canvasH / 2)));
     if (d < bestDist) { bestDist = d; bestIdx = i; }
   });
 
@@ -311,7 +327,7 @@ canvas.addEventListener('mousemove', e => {
     document.getElementById('ctrl-ch-offsetY').value = newOffset;
     document.getElementById('val-ch-offsetY').textContent = newOffset.toFixed(2);
   }
-  render();
+  scheduleRender();
 });
 
 canvas.addEventListener('mouseup',    () => { dragState = null; canvas.style.cursor = ''; });
@@ -335,10 +351,12 @@ function initControls() {
 
   // ── Channel rows ──────────────────────────────────────
   CONFIG.channels.forEach((ch, i) => {
+    document.querySelector(`#ch-row-${i} .ch-dot`).style.background = chColorCss(ch);
     document.getElementById(`ctrl-ch${i}-enabled`).checked = ch.enabled;
     document.getElementById(`ctrl-ch${i}-enabled`).addEventListener('change', function () {
       CONFIG.channels[i].enabled = this.checked;
-      render();
+      if (activeChannel === i) updateEditorUI();
+      scheduleRender();
     });
     document.getElementById(`ch-row-${i}`).addEventListener('click', () => selectChannel(i));
   });
@@ -349,14 +367,14 @@ function initControls() {
       const v = asInt ? Math.round(parseFloat(this.value)) : parseFloat(this.value);
       setNestedProp(getC(), path, v);
       document.getElementById(valId).textContent = fmt(v);
-      render();
+      scheduleRender();
     });
   }
 
   function bindEditorSelect(id, path) {
     document.getElementById(id).addEventListener('change', function () {
       setNestedProp(getC(), path, this.value);
-      render();
+      scheduleRender();
     });
   }
 
@@ -365,7 +383,7 @@ function initControls() {
     document.getElementById(id).addEventListener('change', function () {
       setNestedProp(getC(), path, this.checked);
       if (sub) sub.classList.toggle('collapsed', !this.checked);
-      render();
+      scheduleRender();
     });
   }
 
@@ -376,7 +394,7 @@ function initControls() {
   bindEditorSlider('ctrl-ch-amplitude',   'val-ch-amplitude',   'amplitude',        f2);
   document.getElementById('ctrl-ch-strokeWidth').addEventListener('change', function () {
     const v = parseFloat(this.value);
-    if (!isNaN(v) && v > 0) { getC().strokeWidth = v; render(); }
+    if (!isNaN(v) && v > 0) { getC().strokeWidth = v; scheduleRender(); }
   });
 
   // FM
@@ -413,27 +431,58 @@ function initControls() {
     const sub = subId ? document.getElementById(subId) : null;
     const sync = () => { if (sub) sub.classList.toggle('collapsed', !el.checked); };
     el.checked = get(); sync();
-    el.addEventListener('change', () => { set(el.checked); sync(); render(); });
+    el.addEventListener('change', () => { set(el.checked); sync(); scheduleRender(); });
   }
   function bindCRTSlider(id, valId, get, set, fmt) {
     const el = document.getElementById(id);
     const valEl = document.getElementById(valId);
-    el.value = get(); valEl.textContent = fmt(get());
-    el.addEventListener('input', () => { const v = parseFloat(el.value); set(v); valEl.textContent = fmt(v); render(); });
+    const v0 = get(); el.value = v0; valEl.textContent = fmt(v0);
+    el.addEventListener('input', () => { const v = parseFloat(el.value); set(v); valEl.textContent = fmt(v); scheduleRender(); });
   }
-  function bindCRTSelect(id, get, set) {
-    const el = document.getElementById(id);
-    el.value = get();
-    el.addEventListener('change', () => { set(el.value); render(); });
-  }
-
   bindCRTToggle('ctrl-crt-enabled',    () => CONFIG.crt.enabled,    v => { CONFIG.crt.enabled = v; },    'crt-controls');
-  bindCRTSelect('ctrl-crt-color',      () => CONFIG.crt.color,      v => { CONFIG.crt.color = v; });
   bindCRTSlider('ctrl-crt-resolution', 'val-crt-resolution', () => CONFIG.crt.resolution, v => { CONFIG.crt.resolution = v; }, fi);
   bindCRTSlider('ctrl-crt-glow',       'val-crt-glow',       () => CONFIG.crt.glow,       v => { CONFIG.crt.glow = v; },       f2);
   bindCRTToggle('ctrl-crt-scanlines',  () => CONFIG.crt.scanlines,  v => { CONFIG.crt.scanlines = v; });
-  bindCRTToggle('ctrl-crt-graticule',  () => CONFIG.crt.graticule,  v => { CONFIG.crt.graticule = v; });
-  bindCRTToggle('ctrl-crt-bezel',      () => CONFIG.crt.bezel,      v => { CONFIG.crt.bezel = v; });
+
+  // Color sliders
+  function bindColorSlider(id, valId, key, fmt) {
+    document.getElementById(id).addEventListener('input', function () {
+      const v = parseFloat(this.value);
+      getC().color[key] = v;
+      document.getElementById(valId).textContent = fmt(v);
+      const css = chColorCss(getC());
+      document.getElementById('ch-editor-dot').style.background = css;
+      document.querySelector(`#ch-row-${activeChannel} .ch-dot`).style.background = css;
+      scheduleRender();
+    });
+  }
+  bindColorSlider('ctrl-ch-color-l', 'val-ch-color-l', 'l', f2);
+  bindColorSlider('ctrl-ch-color-c', 'val-ch-color-c', 'c', v => v.toFixed(3));
+  bindColorSlider('ctrl-ch-color-h', 'val-ch-color-h', 'h', fi);
+
+  document.getElementById('btn-ch-enable').addEventListener('click', () => {
+    CONFIG.channels[activeChannel].enabled = true;
+    document.getElementById(`ctrl-ch${activeChannel}-enabled`).checked = true;
+    updateEditorUI();
+    scheduleRender();
+  });
+
+  // Canvas size
+  function bindCanvasSize(id, getVal, setVal) {
+    const el = document.getElementById(id);
+    el.value = getVal();
+    el.addEventListener('change', function () {
+      const v = Math.max(100, Math.min(4000, Math.round(parseFloat(this.value))));
+      this.value = v;
+      setVal(v);
+      canvas.width = canvasW;
+      canvas.height = canvasH;
+      glowCanvas = null;
+      scheduleRender();
+    });
+  }
+  bindCanvasSize('ctrl-canvas-width',  () => canvasW, v => { canvasW = v; });
+  bindCanvasSize('ctrl-canvas-height', () => canvasH, v => { canvasH = v; });
 
   selectChannel(0);
 }
@@ -453,8 +502,11 @@ function updateEditorUI() {
   const f2 = v => v.toFixed(2);
   const fi = v => Math.round(v).toString();
 
+  const css = chColorCss(ch);
   document.getElementById('ch-editor-title').textContent = `CH ${activeChannel + 1}`;
-  document.getElementById('ch-editor-dot').style.background = ch.color;
+  document.getElementById('ch-editor-dot').style.background = css;
+  document.querySelector(`#ch-row-${activeChannel} .ch-dot`).style.background = css;
+  document.getElementById('ch-editor').classList.toggle('ch-editor--disabled', !ch.enabled);
 
   function sl(id, valId, val, fmt) {
     document.getElementById(id).value = val;
@@ -471,6 +523,10 @@ function updateEditorUI() {
   sl('ctrl-ch-frequency',   'val-ch-frequency',   ch.frequency,          f1);
   sl('ctrl-ch-amplitude',   'val-ch-amplitude',   ch.amplitude,          f2);
   document.getElementById('ctrl-ch-strokeWidth').value = ch.strokeWidth;
+
+  sl('ctrl-ch-color-l', 'val-ch-color-l', ch.color.l, f2);
+  sl('ctrl-ch-color-c', 'val-ch-color-c', ch.color.c, v => v.toFixed(3));
+  sl('ctrl-ch-color-h', 'val-ch-color-h', ch.color.h, fi);
 
   tog('ctrl-ch-fm-enabled',   'ch-fm-controls',   ch.fm.enabled);
   sl('ctrl-ch-fm-ratio',     'val-ch-fm-ratio',   ch.fm.ratio,           f1);
@@ -498,3 +554,5 @@ function updateEditorUI() {
 
 initControls();
 render();
+
+
