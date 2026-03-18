@@ -1,10 +1,12 @@
+@import url('https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,400;0,500;0,600;1,400&display=swap');
+
 * { box-sizing: border-box; }
 
 html { font-size: 14px; }
 
 body {
   margin: 0;
-  background: #1c1c1c;
+  background: #0e0e0e;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -26,24 +28,32 @@ canvas {
   top: 0;
   bottom: 0;
   width: 220px;
-  background: rgba(14, 14, 14, 0.97);
+  background: #0e0e0e;
   overflow-y: auto;
-  padding: 16px 14px 24px;
-  font-family: monospace;
+  padding: 20px 14px 32px;
+  font-family: 'Barlow', sans-serif;
   font-size: 1em;
   color: #888;
   scrollbar-width: thin;
-  scrollbar-color: #2a2a2a transparent;
+  scrollbar-color: #252525 transparent;
+  /* Corner screws — top two only (panel scrolls) */
+  background-image:
+    radial-gradient(circle, #303530 3.5px, #1e201e 3.5px, #1e201e 5px, transparent 5px),
+    radial-gradient(circle, #303530 3.5px, #1e201e 3.5px, #1e201e 5px, transparent 5px);
+  background-position: 10px 10px, calc(100% - 10px) 10px;
+  background-size: 10px 10px, 10px 10px;
+  background-repeat: no-repeat;
+  background-color: #0e0e0e;
 }
 
 #controls {
   left: 0;
-  border-right: 1px solid #222;
+  border-right: 1px solid #1c1c1c;
 }
 
 #controls-right {
   right: 0;
-  border-left: 1px solid #222;
+  border-left: 1px solid #1c1c1c;
 }
 
 .export-buttons {
@@ -53,54 +63,65 @@ canvas {
 }
 
 .export-buttons button {
-  background: #222;
+  background: #141414;
   color: #aaa;
-  border: 1px solid #444;
+  border: 1px solid #2a2a2a;
   padding: 8px 10px;
-  font-family: monospace;
+  font-family: 'Barlow', sans-serif;
   font-size: 1em;
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: 2px;
   text-align: left;
+  letter-spacing: 0.5px;
 }
 
 .export-buttons button:hover {
-  background: #333;
-  color: #fff;
+  background: #1e1e1e;
+  color: #ddd;
 }
 
 #btn-copy,
 #btn-download {
   background: transparent;
   color: #3effd8;
-  border: 1.5px solid #3effd8;
+  border: 1px solid rgba(62, 255, 216, 0.4);
   padding: 10px 14px;
-  border-radius: 8px;
+  border-radius: 2px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   text-align: center;
+  letter-spacing: 1px;
+  font-weight: 500;
+  text-transform: uppercase;
+  font-size: 0.9em;
   transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
 
 #btn-copy:hover,
 #btn-download:hover {
-  background: rgba(62, 255, 216, 0.08);
+  background: rgba(62, 255, 216, 0.06);
   color: #7ffce9;
-  border-color: #7ffce9;
+  border-color: rgba(127, 252, 233, 0.5);
 }
 
 #controls h1 {
-  font-size: 1em;
+  font-family: 'Barlow', sans-serif;
+  font-weight: 600;
+  font-size: 1.15em;
   text-transform: uppercase;
-  letter-spacing: 2.5px;
-  color: #444;
-  margin: 0 0 18px;
+  letter-spacing: 3.5px;
+  color: #ededed;
+  margin: 0 0 22px;
+  padding: 28px 0 14px;
+  border-bottom: 1px solid #1e1e1e;
+  /* Subtle emboss from BMS design */
+  text-shadow: 0.2px 0.2px 0 rgba(0,0,0,0.4), 1px 1px 0 rgba(255,255,255,0.04);
 }
 
 .section {
-  margin-bottom: 32px;
+  margin-bottom: 28px;
 }
 
 .section-header {
@@ -108,15 +129,16 @@ canvas {
   justify-content: space-between;
   align-items: center;
   padding-bottom: 7px;
-  border-bottom: 1px solid #252525;
+  border-bottom: 1px solid #1e1e1e;
   margin-bottom: 10px;
 }
 
 .section-title {
-  font-size: 1em;
-  font-weight: bold;
+  font-family: 'Barlow', sans-serif;
+  font-size: 0.85em;
+  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 2px;
+  letter-spacing: 2.5px;
   color: #999;
 }
 
@@ -124,7 +146,7 @@ canvas {
 .section > .section-title {
   display: block;
   padding-bottom: 7px;
-  border-bottom: 1px solid #252525;
+  border-bottom: 1px solid #1e1e1e;
   margin-bottom: 10px;
 }
 
@@ -132,7 +154,8 @@ canvas {
   appearance: none;
   width: 30px;
   height: 15px;
-  background: #252525;
+  background: #1e1e1e;
+  border: 1px solid #2a2a2a;
   border-radius: 8px;
   cursor: pointer;
   position: relative;
@@ -142,6 +165,7 @@ canvas {
 
 .section-header input[type="checkbox"]:checked {
   background: #1a3d1a;
+  border-color: #2a4a2a;
 }
 
 .section-header input[type="checkbox"]::after {
@@ -149,16 +173,16 @@ canvas {
   position: absolute;
   width: 11px;
   height: 11px;
-  background: #4a4a4a;
+  background: #3a3a3a;
   border-radius: 50%;
-  top: 2px;
-  left: 2px;
+  top: 1px;
+  left: 1px;
   transition: left 0.15s, background 0.15s;
 }
 
 .section-header input[type="checkbox"]:checked::after {
-  left: 17px;
-  background: #5c5;
+  left: 16px;
+  background: #55cc55;
 }
 
 .section-controls {
@@ -184,7 +208,8 @@ canvas {
   appearance: none;
   width: 24px;
   height: 12px;
-  background: #252525;
+  background: #1e1e1e;
+  border: 1px solid #2a2a2a;
   border-radius: 6px;
   cursor: pointer;
   position: relative;
@@ -194,6 +219,7 @@ canvas {
 
 .sub-toggle-row input[type="checkbox"]:checked {
   background: #1a3d1a;
+  border-color: #2a4a2a;
 }
 
 .sub-toggle-row input[type="checkbox"]::after {
@@ -201,16 +227,16 @@ canvas {
   position: absolute;
   width: 8px;
   height: 8px;
-  background: #4a4a4a;
+  background: #3a3a3a;
   border-radius: 50%;
-  top: 2px;
-  left: 2px;
+  top: 1px;
+  left: 1px;
   transition: left 0.15s, background 0.15s;
 }
 
 .sub-toggle-row input[type="checkbox"]:checked::after {
-  left: 14px;
-  background: #5c5;
+  left: 13px;
+  background: #55cc55;
 }
 
 .sub-toggle-row label {
@@ -218,6 +244,7 @@ canvas {
   font-size: 1em;
   cursor: pointer;
   user-select: none;
+  letter-spacing: 0.5px;
 }
 
 .control-row {
@@ -236,24 +263,24 @@ canvas {
 
 input[type="number"] {
   width: 64px;
-  background: #1a1a1a;
+  background: #111;
   color: #ccc;
-  border: 1px solid #2a2a2a;
+  border: 1px solid #242424;
   padding: 4px 6px;
-  font-family: monospace;
+  font-family: 'Barlow', sans-serif;
   font-size: 1em;
-  border-radius: 3px;
+  border-radius: 2px;
   outline: none;
   appearance: textfield;
 }
 
 input[type="number"]:hover {
-  border-color: #3a3a3a;
+  border-color: #333;
 }
 
 input[type="number"]:focus {
-  border-color: #555;
-  color: #fff;
+  border-color: #444;
+  color: #ededed;
 }
 
 .control-label {
@@ -261,7 +288,9 @@ input[type="number"]:focus {
   align-items: center;
   gap: 4px;
   margin-bottom: 4px;
-  color: #666;
+  color: #5a5a5a;
+  font-size: 0.95em;
+  letter-spacing: 0.3px;
 }
 
 .control-label .control-number,
@@ -270,15 +299,15 @@ input[type="number"]:focus {
 }
 
 .control-value {
-  color: #999;
+  color: #888;
 }
 
 .copy-btn {
   background: none;
   border: none;
-  color: #444;
+  color: #333;
   cursor: pointer;
-  font-family: monospace;
+  font-family: 'Barlow', sans-serif;
   font-size: 1em;
   padding: 0 1px;
   line-height: 1;
@@ -293,19 +322,19 @@ input[type="number"]:focus {
 }
 
 .copy-btn:hover {
-  color: #888;
+  color: #777;
 }
 
 .copy-menu {
   position: fixed;
-  background: #1a1a1a;
-  border: 1px solid #333;
-  border-radius: 4px;
+  background: #141414;
+  border: 1px solid #2a2a2a;
+  border-radius: 2px;
   padding: 4px 0;
   z-index: 1000;
   min-width: 170px;
   display: none;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.7);
 }
 
 .copy-menu.visible {
@@ -314,26 +343,27 @@ input[type="number"]:focus {
 
 .copy-menu-item {
   padding: 7px 14px;
-  color: #888;
-  font-family: monospace;
+  color: #777;
+  font-family: 'Barlow', sans-serif;
   font-size: 1em;
   cursor: pointer;
   user-select: none;
+  letter-spacing: 0.3px;
 }
 
 .copy-menu-item:hover {
-  background: #252525;
+  background: #1e1e1e;
   color: #ccc;
 }
 
 .control-number {
   width: 54px;
   background: transparent;
-  color: #999;
+  color: #888;
   border: none;
-  border-bottom: 1px solid #2a2a2a;
+  border-bottom: 1px solid #242424;
   padding: 0 2px 1px;
-  font-family: monospace;
+  font-family: 'Barlow', sans-serif;
   font-size: 1em;
   text-align: right;
   outline: none;
@@ -347,12 +377,12 @@ input[type="number"]:focus {
 }
 
 .control-number:hover {
-  border-bottom-color: #444;
+  border-bottom-color: #3a3a3a;
   color: #bbb;
 }
 
 .control-number:focus {
-  border-bottom-color: #666;
+  border-bottom-color: #555;
   color: #ccc;
 }
 
@@ -360,7 +390,7 @@ input[type="range"] {
   width: 100%;
   appearance: none;
   height: 2px;
-  background: #2a2a2a;
+  background: #222;
   border-radius: 1px;
   outline: none;
   cursor: pointer;
@@ -370,31 +400,32 @@ input[type="range"]::-webkit-slider-thumb {
   appearance: none;
   width: 10px;
   height: 10px;
-  background: #5c5;
+  background: #55cc55;
   border-radius: 50%;
   cursor: pointer;
   transition: background 0.1s;
 }
 
 input[type="range"]:hover::-webkit-slider-thumb {
-  background: #7e7;
+  background: #77ee77;
 }
 
 select {
   width: 100%;
-  background: #1a1a1a;
-  color: #999;
-  border: 1px solid #2a2a2a;
+  background: #111;
+  color: #888;
+  border: 1px solid #242424;
   padding: 5px 6px;
-  font-family: monospace;
+  font-family: 'Barlow', sans-serif;
   font-size: 1em;
-  border-radius: 3px;
+  border-radius: 2px;
   outline: none;
   cursor: pointer;
+  letter-spacing: 0.3px;
 }
 
 select:hover {
-  border-color: #3a3a3a;
+  border-color: #333;
   color: #bbb;
 }
 
@@ -409,8 +440,8 @@ select:hover {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 8px;
-  border-radius: 3px;
+  padding: 7px 8px;
+  border-radius: 2px;
   cursor: pointer;
   user-select: none;
   transition: background 0.1s;
@@ -418,12 +449,12 @@ select:hover {
 }
 
 .channel-row:hover {
-  background: #161616;
+  background: #141414;
 }
 
 .channel-row.active {
-  background: #1a1a1a;
-  border-left-color: #333;
+  background: #161616;
+  border-left-color: #303030;
 }
 
 .ch-dot {
@@ -435,17 +466,19 @@ select:hover {
 
 .ch-name {
   flex: 1;
-  font-size: 1em;
+  font-size: 0.9em;
+  font-weight: 500;
   color: #888;
   text-transform: uppercase;
-  letter-spacing: 1.5px;
+  letter-spacing: 2px;
 }
 
 .channel-row input[type="checkbox"] {
   appearance: none;
   width: 30px;
   height: 15px;
-  background: #252525;
+  background: #1e1e1e;
+  border: 1px solid #2a2a2a;
   border-radius: 8px;
   cursor: pointer;
   position: relative;
@@ -455,6 +488,7 @@ select:hover {
 
 .channel-row input[type="checkbox"]:checked {
   background: #1a3d1a;
+  border-color: #2a4a2a;
 }
 
 .channel-row input[type="checkbox"]::after {
@@ -462,16 +496,16 @@ select:hover {
   position: absolute;
   width: 11px;
   height: 11px;
-  background: #4a4a4a;
+  background: #3a3a3a;
   border-radius: 50%;
-  top: 2px;
-  left: 2px;
+  top: 1px;
+  left: 1px;
   transition: left 0.15s, background 0.15s;
 }
 
 .channel-row input[type="checkbox"]:checked::after {
-  left: 17px;
-  background: #5c5;
+  left: 16px;
+  background: #55cc55;
 }
 
 /* ── Channel editor ────────────────────────────────────── */
@@ -481,7 +515,7 @@ select:hover {
   gap: 7px;
   padding-bottom: 10px;
   margin-bottom: 12px;
-  border-bottom: 1px solid #252525;
+  border-bottom: 1px solid #1e1e1e;
 }
 
 .ch-editor-enable {
@@ -490,19 +524,22 @@ select:hover {
 
 .ch-editor-enable button {
   width: 100%;
-  background: #1a2a1a;
-  color: #5c5;
-  border: 1px solid #2a3a2a;
+  background: #111a11;
+  color: #55cc55;
+  border: 1px solid #1e2e1e;
   padding: 7px 10px;
-  font-family: monospace;
+  font-family: 'Barlow', sans-serif;
   font-size: 1em;
+  font-weight: 500;
+  letter-spacing: 1px;
+  text-transform: uppercase;
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: 2px;
 }
 
 .ch-editor-enable button:hover {
-  background: #223a22;
-  color: #7e7;
+  background: #162016;
+  color: #77ee77;
 }
 
 #ch-editor.ch-editor--disabled .ch-editor-header {
@@ -527,23 +564,24 @@ select:hover {
 
 .ch-sub-title {
   display: block;
-  font-size: 1em;
+  font-size: 0.82em;
+  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 2px;
+  letter-spacing: 2.5px;
   color: #555;
   padding-bottom: 5px;
-  border-bottom: 1px solid #1a1a1a;
+  border-bottom: 1px solid #161616;
   margin-bottom: 8px;
 }
 
 /* Tone down sub-section toggle headers inside the channel editor */
 .ch-subsection .section-header {
-  border-bottom-color: #1a1a1a;
+  border-bottom-color: #161616;
   padding-bottom: 5px;
   margin-bottom: 8px;
 }
 
 .ch-subsection .section-header .section-title {
-  font-size: 1em;
-  color: #666;
+  font-size: 0.85em;
+  color: #555;
 }
