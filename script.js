@@ -15,6 +15,7 @@ function defaultChannel(i) {
     frequency:   3,
     amplitude:   0.7,
     strokeWidth: 5,
+    phase:       0,
     fm:   { enabled: false, ratio: 1.6,  depth: 0.4 },
     fold: { enabled: false, threshold: 0.3, iterations: 6 },
     am:   { enabled: false, rate: 2,     depth: 1,    shape: 'sine' },
@@ -30,8 +31,20 @@ const CONFIG = {
   crt: {
     enabled:    false,
     resolution: 320,
-    glow:       0.7,
+    glow:       0,
     scanlines:  true,
+  },
+
+  xy: {
+    enabled: false,
+    chX:     0,
+    chY:     1,
+  },
+
+  anim: {
+    enabled:  false,
+    speed:    0.5,
+    duration: 4,
   },
 };
 
@@ -46,7 +59,7 @@ const waveFunctions = {
 // ── Canvas setup ──────────────────────────────────────────
 const canvas = document.getElementById('scope');
 const ctx = canvas.getContext('2d');
-let canvasW = 1080, canvasH = 1080;
+let canvasW = 1080, canvasH = 1350;
 canvas.width = canvasW;
 canvas.height = canvasH;
 
@@ -176,52 +189,124 @@ function drawLCDGrid(target) {
   target.stroke();
 }
 
-// ── Compute wave points ───────────────────────────────────
+// ── Compute raw sample [-1, 1] for a given position ──────
+function computeSample(ch, px, totalPx) {
+  const waveFn = waveFunctions[ch.waveType];
+  const baseX = (px / totalPx) * 2 * Math.PI * ch.frequency;
+
+  let x = baseX;
+  if (ch.fm.enabled) {
+    x = baseX + ch.fm.depth * Math.sin((px / totalPx) * 2 * Math.PI * ch.frequency * ch.fm.ratio);
+  }
+
+  let sample = waveFn(x + ch.phase);
+
+  if (ch.fold.enabled) {
+    sample = waveFold(sample * (1 / ch.fold.threshold), 1, ch.fold.iterations);
+  }
+
+  if (ch.ws.enabled) {
+    const curve = waveshapeCurves[ch.ws.curve] || waveshapeCurves.tanh;
+    sample = curve(sample * ch.ws.drive) / Math.tanh(ch.ws.drive);
+  }
+
+  if (ch.am.enabled) {
+    const amFn = waveFunctions[ch.am.shape] || waveFunctions.sine;
+    const lfo = (amFn((px / totalPx) * 2 * Math.PI * ch.am.rate) + 1) / 2;
+    sample *= 1 - ch.am.depth * (1 - lfo);
+  }
+
+  if (ch.adsr.enabled) {
+    sample *= adsrEnvelope(px / totalPx, ch.adsr.attack, ch.adsr.decay, ch.adsr.sustain, ch.adsr.release);
+  }
+
+  return sample;
+}
+
+// ── Compute wave points (scope / time-domain) ─────────────
 function computeWave(ch) {
-  const { waveType, frequency, amplitude, offsetY } = ch;
-  const waveFn = waveFunctions[waveType];
-  const centerY = canvasH / 2 + offsetY * (canvasH / 2);
-  const ampPx = (canvasH / 2) * amplitude;
-
-  // Hoist loop-invariant lookups
-  const wsCurve    = ch.ws.enabled ? (waveshapeCurves[ch.ws.curve] || waveshapeCurves.tanh) : null;
-  const wsTanhDrv  = ch.ws.enabled ? Math.tanh(ch.ws.drive) : 1;
-  const amFn       = ch.am.enabled ? (waveFunctions[ch.am.shape] || waveFunctions.sine) : null;
-
+  const centerY = canvasH / 2 + ch.offsetY * (canvasH / 2);
+  const ampPx = (canvasH / 2) * ch.amplitude;
   const points = [];
   for (let px = 0; px <= canvasW; px++) {
-    const baseX = (px / canvasW) * 2 * Math.PI * frequency;
-
-    let x = baseX;
-    if (ch.fm.enabled) {
-      const modX = (px / canvasW) * 2 * Math.PI * frequency * ch.fm.ratio;
-      x = baseX + ch.fm.depth * Math.sin(modX);
-    }
-
-    let sample = waveFn(x);
-
-    if (ch.fold.enabled) {
-      sample = waveFold(sample * (1 / ch.fold.threshold), 1, ch.fold.iterations);
-    }
-
-    if (ch.ws.enabled) {
-      sample = wsCurve(sample * ch.ws.drive) / wsTanhDrv;
-    }
-
-    if (ch.am.enabled) {
-      const lfoX = (px / canvasW) * 2 * Math.PI * ch.am.rate;
-      const lfo = (amFn(lfoX) + 1) / 2;
-      sample *= 1 - ch.am.depth * (1 - lfo);
-    }
-
-    if (ch.adsr.enabled) {
-      const { attack, decay, sustain, release } = ch.adsr;
-      sample *= adsrEnvelope(px / canvasW, attack, decay, sustain, release);
-    }
-
-    points.push({ x: px, y: centerY - sample * ampPx });
+    points.push({ x: px, y: centerY - computeSample(ch, px, canvasW) * ampPx });
   }
   return points;
+}
+
+// ── Compute Lissajous points (XY mode) ───────────────────
+function computeLissajousPoints(chX, chY) {
+  const N = canvasW * 2;
+  const cx = canvasW / 2, cy = canvasH / 2;
+  const points = [];
+  for (let i = 0; i <= N; i++) {
+    points.push({
+      x: cx + computeSample(chX, i, N) * chX.amplitude * (canvasW / 2),
+      y: cy - computeSample(chY, i, N) * chY.amplitude * (canvasH / 2),
+    });
+  }
+  return points;
+}
+
+// ── Draw Lissajous (CRT mode) ─────────────────────────────
+function drawCRTLissajous(target, points, ch) {
+  const gi = CONFIG.crt.glow;
+  const vw = CONFIG.crt.resolution;
+  const vh = Math.round(vw * canvasH / canvasW);
+  const cw = canvasW / vw;
+  const rh = canvasH / vh;
+  const color = chColorCss(ch);
+
+  const seen = new Set();
+  const cells = [];
+  const thick = Math.max(1, Math.round(ch.strokeWidth));
+  const half  = Math.floor(thick / 2);
+
+  function addCell(ix, iy) {
+    for (let dx = -half; dx <= half; dx++) {
+      for (let dy = -half; dy <= half; dy++) {
+        const key = `${ix + dx},${iy + dy}`;
+        if (!seen.has(key)) { seen.add(key); cells.push({ x: (ix + dx) * cw, y: (iy + dy) * rh }); }
+      }
+    }
+  }
+
+  let prev = null;
+  for (const pt of points) {
+    const ix = Math.round(pt.x / cw);
+    const iy = Math.round(pt.y / rh);
+    if (prev !== null) {
+      const dix = ix - prev.ix, diy = iy - prev.iy;
+      const steps = Math.max(Math.abs(dix), Math.abs(diy));
+      for (let s = 1; s < steps; s++) {
+        addCell(Math.round(prev.ix + dix * s / steps), Math.round(prev.iy + diy * s / steps));
+      }
+    }
+    addCell(ix, iy);
+    prev = { ix, iy };
+  }
+
+  if (gi > 0) {
+    if (!glowCanvas) { glowCanvas = document.createElement('canvas'); glowCanvas.width = canvasW; glowCanvas.height = canvasH; }
+    const gc = glowCanvas.getContext('2d');
+    gc.clearRect(0, 0, canvasW, canvasH);
+    gc.fillStyle = color;
+    for (const { x, y } of cells) gc.fillRect(x, y, cw, rh);
+
+    target.filter = `blur(${Math.round(cw * 2 * gi)}px)`;
+    target.globalAlpha = 0.45 * gi;
+    target.drawImage(glowCanvas, 0, 0);
+
+    target.filter = `blur(${Math.round(cw * 0.6 * gi)}px)`;
+    target.globalAlpha = 0.75 * gi;
+    target.drawImage(glowCanvas, 0, 0);
+
+    target.filter = 'none';
+    target.globalAlpha = 1;
+  }
+
+  target.fillStyle = color;
+  for (const { x, y } of cells) target.fillRect(x, y, cw, rh);
 }
 
 // ── Draw wave (vector mode) ───────────────────────────────
@@ -236,6 +321,65 @@ function drawWave(target, points, ch) {
   target.stroke();
 }
 
+// ── Animation loop ────────────────────────────────────────
+let animRafId  = null;
+let animLastTs = null;
+
+function animTick(ts) {
+  if (animLastTs !== null) {
+    const dt     = Math.min((ts - animLastTs) / 1000, 0.1);
+    const dPhase = CONFIG.anim.speed * 2 * Math.PI * dt;
+    CONFIG.channels.forEach(ch => { ch.phase = (ch.phase + dPhase) % (2 * Math.PI); });
+    const phSlider = document.getElementById('ctrl-ch-phase');
+    const phVal    = document.getElementById('val-ch-phase');
+    if (phSlider) phSlider.value = getC().phase;
+    if (phVal)    phVal.textContent = getC().phase.toFixed(2);
+    render();
+  }
+  animLastTs = ts;
+  animRafId  = requestAnimationFrame(animTick);
+}
+
+function startAnim() {
+  if (animRafId) return;
+  animLastTs = null;
+  animRafId  = requestAnimationFrame(animTick);
+}
+
+function stopAnim() {
+  if (animRafId) cancelAnimationFrame(animRafId);
+  animRafId  = null;
+  animLastTs = null;
+}
+
+// ── WebM recording ────────────────────────────────────────
+let mediaRecorder  = null;
+let recordedChunks = [];
+
+function startRecording() {
+  if (mediaRecorder) return;
+  const mimeType = ['video/webm;codecs=vp9', 'video/webm'].find(t => MediaRecorder.isTypeSupported(t)) || '';
+  const stream   = canvas.captureStream(60);
+  recordedChunks = [];
+  mediaRecorder  = new MediaRecorder(stream, mimeType ? { mimeType } : {});
+  const btn      = document.getElementById('btn-record');
+
+  mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
+  mediaRecorder.onstop = () => {
+    const blob = new Blob(recordedChunks, { type: 'video/webm' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = `wave-${Date.now()}.webm`; a.click();
+    URL.revokeObjectURL(url);
+    mediaRecorder = null;
+    btn.textContent = 'Record WebM';
+  };
+
+  mediaRecorder.start();
+  btn.textContent = 'Recording…';
+  setTimeout(() => { if (mediaRecorder) mediaRecorder.stop(); }, CONFIG.anim.duration * 1000);
+}
+
 // ── Render ────────────────────────────────────────────────
 let renderPending = false;
 function scheduleRender() {
@@ -245,16 +389,27 @@ function scheduleRender() {
 }
 
 function render() {
-  ctx.fillStyle = '#000';
+  ctx.fillStyle = '#1c1c1c';
   ctx.fillRect(0, 0, canvasW, canvasH);
 
-  const active = CONFIG.channels.filter(ch => ch.enabled);
-
-  if (CONFIG.crt.enabled) {
-    for (const ch of active) drawCRTWave(ctx, quantizePoints(computeWave(ch)), ch);
-    if (CONFIG.crt.scanlines) drawLCDGrid(ctx);
+  if (CONFIG.xy.enabled) {
+    const chX = CONFIG.channels[CONFIG.xy.chX];
+    const chY = CONFIG.channels[CONFIG.xy.chY];
+    const pts = computeLissajousPoints(chX, chY);
+    if (CONFIG.crt.enabled) {
+      drawCRTLissajous(ctx, pts, chX);
+      if (CONFIG.crt.scanlines) drawLCDGrid(ctx);
+    } else {
+      drawWave(ctx, pts, chX);
+    }
   } else {
-    for (const ch of active) drawWave(ctx, computeWave(ch), ch);
+    const active = CONFIG.channels.filter(ch => ch.enabled);
+    if (CONFIG.crt.enabled) {
+      for (const ch of active) drawCRTWave(ctx, quantizePoints(computeWave(ch)), ch);
+      if (CONFIG.crt.scanlines) drawLCDGrid(ctx);
+    } else {
+      for (const ch of active) drawWave(ctx, computeWave(ch), ch);
+    }
   }
 }
 
@@ -267,8 +422,20 @@ function getExportBlob() {
 
   const active = CONFIG.channels.filter(ch => ch.enabled);
 
-  if (CONFIG.crt.enabled) {
-    offCtx.fillStyle = '#000';
+  if (CONFIG.xy.enabled) {
+    const chX = CONFIG.channels[CONFIG.xy.chX];
+    const chY = CONFIG.channels[CONFIG.xy.chY];
+    const pts = computeLissajousPoints(chX, chY);
+    if (CONFIG.crt.enabled) {
+      offCtx.fillStyle = '#1c1c1c';
+      offCtx.fillRect(0, 0, canvasW, canvasH);
+      drawCRTLissajous(offCtx, pts, chX);
+      if (CONFIG.crt.scanlines) drawLCDGrid(offCtx);
+    } else {
+      drawWave(offCtx, pts, chX);
+    }
+  } else if (CONFIG.crt.enabled) {
+    offCtx.fillStyle = '#1c1c1c';
     offCtx.fillRect(0, 0, canvasW, canvasH);
     for (const ch of active) drawCRTWave(offCtx, quantizePoints(computeWave(ch)), ch);
     if (CONFIG.crt.scanlines) drawLCDGrid(offCtx);
@@ -325,7 +492,7 @@ canvas.addEventListener('mousemove', e => {
 
   if (activeChannel === dragState.idx) {
     document.getElementById('ctrl-ch-offsetY').value = newOffset;
-    document.getElementById('val-ch-offsetY').textContent = newOffset.toFixed(2);
+    document.getElementById('val-ch-offsetY').value = newOffset.toFixed(2);
   }
   scheduleRender();
 });
@@ -342,6 +509,10 @@ function setNestedProp(obj, path, val) {
   let cur = obj;
   for (let i = 0; i < parts.length - 1; i++) cur = cur[parts[i]];
   cur[parts[parts.length - 1]] = val;
+}
+
+function getNestedProp(obj, path) {
+  return path.split('.').reduce((cur, p) => cur[p], obj);
 }
 
 function initControls() {
@@ -363,12 +534,28 @@ function initControls() {
 
   // ── Editor controls (always write to getC()) ──────────
   function bindEditorSlider(id, valId, path, fmt, asInt = false) {
-    document.getElementById(id).addEventListener('input', function () {
+    const slider = document.getElementById(id);
+    const valEl  = document.getElementById(valId);
+    const isInput = valEl.tagName === 'INPUT';
+
+    slider.addEventListener('input', function () {
       const v = asInt ? Math.round(parseFloat(this.value)) : parseFloat(this.value);
       setNestedProp(getC(), path, v);
-      document.getElementById(valId).textContent = fmt(v);
+      if (isInput) valEl.value = v; else valEl.textContent = fmt(v);
       scheduleRender();
     });
+
+    if (isInput) {
+      valEl.addEventListener('change', function () {
+        const raw = parseFloat(this.value);
+        if (isNaN(raw)) { this.value = slider.value; return; }
+        const v = asInt ? Math.round(raw) : raw;
+        this.value = v;
+        setNestedProp(getC(), path, v);
+        slider.value = v;
+        scheduleRender();
+      });
+    }
   }
 
   function bindEditorSelect(id, path) {
@@ -392,9 +579,16 @@ function initControls() {
   bindEditorSelect('ctrl-ch-waveType',                           'waveType');
   bindEditorSlider('ctrl-ch-frequency',   'val-ch-frequency',   'frequency',        f1);
   bindEditorSlider('ctrl-ch-amplitude',   'val-ch-amplitude',   'amplitude',        f2);
-  document.getElementById('ctrl-ch-strokeWidth').addEventListener('change', function () {
+  bindEditorSlider('ctrl-ch-phase',       'val-ch-phase',       'phase',            f2);
+  const swNum   = document.getElementById('ctrl-ch-strokeWidth');
+  const swRange = document.getElementById('ctrl-ch-strokeWidth-range');
+  swRange.addEventListener('input', function () {
     const v = parseFloat(this.value);
-    if (!isNaN(v) && v > 0) { getC().strokeWidth = v; scheduleRender(); }
+    getC().strokeWidth = v; swNum.value = v; scheduleRender();
+  });
+  swNum.addEventListener('change', function () {
+    const v = parseFloat(this.value);
+    if (!isNaN(v) && v > 0) { getC().strokeWidth = v; swRange.value = v; scheduleRender(); }
   });
 
   // FM
@@ -441,20 +635,37 @@ function initControls() {
   }
   bindCRTToggle('ctrl-crt-enabled',    () => CONFIG.crt.enabled,    v => { CONFIG.crt.enabled = v; },    'crt-controls');
   bindCRTSlider('ctrl-crt-resolution', 'val-crt-resolution', () => CONFIG.crt.resolution, v => { CONFIG.crt.resolution = v; }, fi);
-  bindCRTSlider('ctrl-crt-glow',       'val-crt-glow',       () => CONFIG.crt.glow,       v => { CONFIG.crt.glow = v; },       f2);
-  bindCRTToggle('ctrl-crt-scanlines',  () => CONFIG.crt.scanlines,  v => { CONFIG.crt.scanlines = v; });
+bindCRTToggle('ctrl-crt-scanlines',  () => CONFIG.crt.scanlines,  v => { CONFIG.crt.scanlines = v; });
 
   // Color sliders
   function bindColorSlider(id, valId, key, fmt) {
-    document.getElementById(id).addEventListener('input', function () {
-      const v = parseFloat(this.value);
+    const slider = document.getElementById(id);
+    const valEl  = document.getElementById(valId);
+    const isInput = valEl.tagName === 'INPUT';
+
+    function applyColor(v) {
       getC().color[key] = v;
-      document.getElementById(valId).textContent = fmt(v);
       const css = chColorCss(getC());
       document.getElementById('ch-editor-dot').style.background = css;
       document.querySelector(`#ch-row-${activeChannel} .ch-dot`).style.background = css;
       scheduleRender();
+    }
+
+    slider.addEventListener('input', function () {
+      const v = parseFloat(this.value);
+      if (isInput) valEl.value = v; else valEl.textContent = fmt(v);
+      applyColor(v);
     });
+
+    if (isInput) {
+      valEl.addEventListener('change', function () {
+        const v = parseFloat(this.value);
+        if (isNaN(v)) { this.value = slider.value; return; }
+        this.value = v;
+        slider.value = v;
+        applyColor(v);
+      });
+    }
   }
   bindColorSlider('ctrl-ch-color-l', 'val-ch-color-l', 'l', f2);
   bindColorSlider('ctrl-ch-color-c', 'val-ch-color-c', 'c', v => v.toFixed(3));
@@ -484,7 +695,142 @@ function initControls() {
   bindCanvasSize('ctrl-canvas-width',  () => canvasW, v => { canvasW = v; });
   bindCanvasSize('ctrl-canvas-height', () => canvasH, v => { canvasH = v; });
 
+  // Animate
+  const animToggle = document.getElementById('ctrl-anim-enabled');
+  const animSub    = document.getElementById('anim-controls');
+  animToggle.checked = CONFIG.anim.enabled;
+  animSub.classList.toggle('collapsed', !CONFIG.anim.enabled);
+  animToggle.addEventListener('change', () => {
+    CONFIG.anim.enabled = animToggle.checked;
+    animSub.classList.toggle('collapsed', !animToggle.checked);
+    if (CONFIG.anim.enabled) startAnim(); else stopAnim();
+  });
+  bindCRTSlider('ctrl-anim-speed',    'val-anim-speed',    () => CONFIG.anim.speed,    v => { CONFIG.anim.speed    = v; }, f2);
+  bindCRTSlider('ctrl-anim-duration', 'val-anim-duration', () => CONFIG.anim.duration, v => { CONFIG.anim.duration = v; }, v => Math.round(v) + 's');
+  document.getElementById('btn-record').addEventListener('click', startRecording);
+
+  // XY Mode
+  const xyToggle = document.getElementById('ctrl-xy-enabled');
+  const xySub    = document.getElementById('xy-controls');
+  xyToggle.checked = CONFIG.xy.enabled;
+  xySub.classList.toggle('collapsed', !CONFIG.xy.enabled);
+  xyToggle.addEventListener('change', () => {
+    CONFIG.xy.enabled = xyToggle.checked;
+    xySub.classList.toggle('collapsed', !xyToggle.checked);
+    scheduleRender();
+  });
+  ['chX', 'chY'].forEach(key => {
+    const el = document.getElementById(`ctrl-xy-${key}`);
+    el.value = CONFIG.xy[key];
+    el.addEventListener('change', () => { CONFIG.xy[key] = parseInt(el.value); scheduleRender(); });
+  });
+
+  initCopyMenu();
   selectChannel(0);
+}
+
+// ── Copy-to-all-channels menu ─────────────────────────────
+function initCopyMenu() {
+  // Shared dropdown with two items
+  const menu = document.createElement('div');
+  menu.id = 'copy-menu';
+  menu.className = 'copy-menu';
+  menu.innerHTML = `
+    <div class="copy-menu-item" id="copy-attr-to-all">Copy to all channels</div>
+    <div class="copy-menu-item" id="copy-all-attrs">Copy all attributes to other channels</div>
+  `;
+  document.body.appendChild(menu);
+
+  const itemAttr = document.getElementById('copy-attr-to-all');
+  const itemAll  = document.getElementById('copy-all-attrs');
+
+  let pendingPath       = null;
+  let pendingChannelIdx = null;
+
+  function openMenu(rect, showAttr, showAll) {
+    itemAttr.style.display = showAttr ? '' : 'none';
+    itemAll.style.display  = showAll  ? '' : 'none';
+    menu.style.left = rect.left + 'px';
+    menu.style.top  = (rect.bottom + 4) + 'px';
+    menu.classList.add('visible');
+  }
+
+  // Inject ⋯ into each copyable attribute control-row
+  document.querySelectorAll('#ch-editor .control-row[data-copy-path]').forEach(row => {
+    const span = row.querySelector('.control-label span');
+    if (!span) return;
+    const btn = document.createElement('button');
+    btn.className = 'copy-btn';
+    btn.textContent = '⋯';
+    span.after(btn);
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      pendingPath = row.dataset.copyPath;
+      pendingChannelIdx = null;
+      openMenu(btn.getBoundingClientRect(), true, false);
+    });
+  });
+
+  // Inject ⋯ into each channel row (before the enable checkbox)
+  CONFIG.channels.forEach((_, i) => {
+    const row = document.getElementById(`ch-row-${i}`);
+    const btn = document.createElement('button');
+    btn.className = 'copy-btn';
+    btn.textContent = '⋯';
+    row.insertBefore(btn, row.querySelector('input[type="checkbox"]'));
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      pendingPath = null;
+      pendingChannelIdx = i;
+      openMenu(btn.getBoundingClientRect(), false, true);
+    });
+  });
+
+  // Close on outside click
+  document.addEventListener('click', () => menu.classList.remove('visible'));
+
+  // Copy single attribute to all channels
+  itemAttr.addEventListener('click', () => {
+    if (pendingPath === null) return;
+    const val = getNestedProp(getC(), pendingPath);
+    CONFIG.channels.forEach((ch, i) => {
+      if (i !== activeChannel) setNestedProp(ch, pendingPath, val);
+    });
+    if (pendingPath.startsWith('color')) {
+      CONFIG.channels.forEach((ch, i) => {
+        document.querySelector(`#ch-row-${i} .ch-dot`).style.background = chColorCss(ch);
+      });
+    }
+    menu.classList.remove('visible');
+    scheduleRender();
+  });
+
+  // Copy all attributes from one channel to all others
+  itemAll.addEventListener('click', () => {
+    if (pendingChannelIdx === null) return;
+    const src = CONFIG.channels[pendingChannelIdx];
+    CONFIG.channels.forEach((ch, i) => {
+      if (i === pendingChannelIdx) return;
+      ch.color      = { ...src.color };
+      ch.offsetY    = src.offsetY;
+      ch.waveType   = src.waveType;
+      ch.frequency  = src.frequency;
+      ch.amplitude  = src.amplitude;
+      ch.strokeWidth = src.strokeWidth;
+      ch.fm   = { ...src.fm };
+      ch.fold = { ...src.fold };
+      ch.am   = { ...src.am };
+      ch.ws   = { ...src.ws };
+      ch.adsr = { ...src.adsr };
+    });
+    CONFIG.channels.forEach((ch, i) => {
+      document.querySelector(`#ch-row-${i} .ch-dot`).style.background = chColorCss(ch);
+    });
+    // Refresh editor if it's showing a channel that was just overwritten
+    if (activeChannel !== pendingChannelIdx) updateEditorUI();
+    menu.classList.remove('visible');
+    scheduleRender();
+  });
 }
 
 // ── Channel selection + editor repopulation ───────────────
@@ -510,7 +856,9 @@ function updateEditorUI() {
 
   function sl(id, valId, val, fmt) {
     document.getElementById(id).value = val;
-    document.getElementById(valId).textContent = fmt(val);
+    const valEl = document.getElementById(valId);
+    if (valEl.tagName === 'INPUT') valEl.value = val;
+    else valEl.textContent = fmt(val);
   }
   function se(id, val) { document.getElementById(id).value = val; }
   function tog(id, subId, val) {
@@ -522,7 +870,9 @@ function updateEditorUI() {
   se('ctrl-ch-waveType',                           ch.waveType);
   sl('ctrl-ch-frequency',   'val-ch-frequency',   ch.frequency,          f1);
   sl('ctrl-ch-amplitude',   'val-ch-amplitude',   ch.amplitude,          f2);
+  sl('ctrl-ch-phase',       'val-ch-phase',       ch.phase,              f2);
   document.getElementById('ctrl-ch-strokeWidth').value = ch.strokeWidth;
+  document.getElementById('ctrl-ch-strokeWidth-range').value = ch.strokeWidth;
 
   sl('ctrl-ch-color-l', 'val-ch-color-l', ch.color.l, f2);
   sl('ctrl-ch-color-c', 'val-ch-color-c', ch.color.c, v => v.toFixed(3));

@@ -69,6 +69,28 @@ canvas {
   color: #fff;
 }
 
+#btn-copy,
+#btn-download {
+  background: transparent;
+  color: #3effd8;
+  border: 1.5px solid #3effd8;
+  padding: 10px 14px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-align: center;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+#btn-copy:hover,
+#btn-download:hover {
+  background: rgba(62, 255, 216, 0.08);
+  color: #7ffce9;
+  border-color: #7ffce9;
+}
+
 #controls h1 {
   font-size: 1em;
   text-transform: uppercase;
@@ -78,7 +100,7 @@ canvas {
 }
 
 .section {
-  margin-bottom: 20px;
+  margin-bottom: 32px;
 }
 
 .section-header {
@@ -236,13 +258,102 @@ input[type="number"]:focus {
 
 .control-label {
   display: flex;
-  justify-content: space-between;
+  align-items: center;
+  gap: 4px;
   margin-bottom: 4px;
   color: #666;
 }
 
+.control-label .control-number,
+.control-label .control-value {
+  margin-left: auto;
+}
+
 .control-value {
   color: #999;
+}
+
+.copy-btn {
+  background: none;
+  border: none;
+  color: #444;
+  cursor: pointer;
+  font-family: monospace;
+  font-size: 1em;
+  padding: 0 1px;
+  line-height: 1;
+  opacity: 0;
+  transition: opacity 0.1s, color 0.1s;
+  flex-shrink: 0;
+}
+
+.control-row:hover .copy-btn,
+.channel-row:hover .copy-btn {
+  opacity: 1;
+}
+
+.copy-btn:hover {
+  color: #888;
+}
+
+.copy-menu {
+  position: fixed;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 4px;
+  padding: 4px 0;
+  z-index: 1000;
+  min-width: 170px;
+  display: none;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+
+.copy-menu.visible {
+  display: block;
+}
+
+.copy-menu-item {
+  padding: 7px 14px;
+  color: #888;
+  font-family: monospace;
+  font-size: 1em;
+  cursor: pointer;
+  user-select: none;
+}
+
+.copy-menu-item:hover {
+  background: #252525;
+  color: #ccc;
+}
+
+.control-number {
+  width: 54px;
+  background: transparent;
+  color: #999;
+  border: none;
+  border-bottom: 1px solid #2a2a2a;
+  padding: 0 2px 1px;
+  font-family: monospace;
+  font-size: 1em;
+  text-align: right;
+  outline: none;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.control-number::-webkit-inner-spin-button,
+.control-number::-webkit-outer-spin-button {
+  opacity: 0.3;
+}
+
+.control-number:hover {
+  border-bottom-color: #444;
+  color: #bbb;
+}
+
+.control-number:focus {
+  border-bottom-color: #666;
+  color: #ccc;
 }
 
 input[type="range"] {
@@ -411,7 +522,7 @@ select:hover {
 }
 
 .ch-subsection {
-  margin-bottom: 14px;
+  margin: 16px 0;
 }
 
 .ch-sub-title {

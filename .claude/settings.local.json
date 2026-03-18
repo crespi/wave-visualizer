@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:www.figma.com)",
+      "mcp__figma-desktop__get_design_context",
+      "mcp__figma-desktop__get_screenshot",
+      "mcp__figma-desktop__get_metadata",
+      "Bash(python -c \"\nimport json\nwith open\\(r'C:\\\\Users\\\\micro\\\\.claude\\\\projects\\\\C--Users-micro-Documents-wave-visualizer\\\\2bf82fcd-81d8-4990-9166-e921d1835aec\\\\tool-results\\\\mcp-figma-desktop-get_metadata-1773837673580.txt', 'r', encoding='utf-8'\\) as f:\n    content = f.read\\(\\)\n# Parse JSON array\ndata = json.loads\\(content\\)\n# Find text blocks with 'icon' in them\nfor item in data:\n    if item.get\\('type'\\) == 'text':\n        text = item.get\\('text', ''\\)\n        if 'icon' in text.lower\\(\\):\n            print\\(text[:3000]\\)\n            break\n\")",
+      "Bash(python -c \"\nimport json, re\nwith open\\(r'C:\\\\Users\\\\micro\\\\.claude\\\\projects\\\\C--Users-micro-Documents-wave-visualizer\\\\2bf82fcd-81d8-4990-9166-e921d1835aec\\\\tool-results\\\\mcp-figma-desktop-get_metadata-1773837673580.txt', 'r', encoding='utf-8'\\) as f:\n    content = f.read\\(\\)\ndata = json.loads\\(content\\)\nfor item in data:\n    if item.get\\('type'\\) == 'text':\n        text = item.get\\('text', ''\\)\n        # Find lines with 'icon' \\(case insensitive\\)\n        lines = text.split\\('\\\\n'\\)\n        matches = [l for l in lines if 'icon' in l.lower\\(\\)]\n        if matches:\n            for m in matches[:30]:\n                print\\(m\\)\n        break\n\")"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "figma"
+  ]
+}

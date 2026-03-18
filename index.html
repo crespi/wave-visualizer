@@ -52,34 +52,34 @@
       <!-- Color -->
       <div class="ch-subsection">
         <span class="ch-sub-title">Color</span>
-        <div class="control-row">
+        <div class="control-row" data-copy-path="color.l">
           <div class="control-label">
             <span>L</span>
-            <span class="control-value" id="val-ch-color-l"></span>
+            <input type="number" class="control-number" id="val-ch-color-l" min="0" max="1" step="0.01">
           </div>
           <input type="range" id="ctrl-ch-color-l" min="0" max="1" step="0.01">
         </div>
-        <div class="control-row">
+        <div class="control-row" data-copy-path="color.c">
           <div class="control-label">
             <span>C</span>
-            <span class="control-value" id="val-ch-color-c"></span>
+            <input type="number" class="control-number" id="val-ch-color-c" min="0" max="0.4" step="0.005">
           </div>
           <input type="range" id="ctrl-ch-color-c" min="0" max="0.4" step="0.005">
         </div>
-        <div class="control-row">
+        <div class="control-row" data-copy-path="color.h">
           <div class="control-label">
             <span>H</span>
-            <span class="control-value" id="val-ch-color-h"></span>
+            <input type="number" class="control-number" id="val-ch-color-h" min="0" max="360" step="1">
           </div>
           <input type="range" id="ctrl-ch-color-h" min="0" max="360" step="1">
         </div>
       </div>
 
       <!-- offsetY -->
-      <div class="control-row">
+      <div class="control-row" data-copy-path="offsetY">
         <div class="control-label">
           <span>offsetY</span>
-          <span class="control-value" id="val-ch-offsetY"></span>
+          <input type="number" class="control-number" id="val-ch-offsetY" min="-1" max="1" step="0.01">
         </div>
         <input type="range" id="ctrl-ch-offsetY" min="-1" max="1" step="0.01">
       </div>
@@ -87,7 +87,7 @@
       <!-- Main -->
       <div class="ch-subsection">
         <span class="ch-sub-title">Main</span>
-        <div class="control-row">
+        <div class="control-row" data-copy-path="waveType">
           <div class="control-label"><span>waveType</span></div>
           <select id="ctrl-ch-waveType">
             <option value="sine">sine</option>
@@ -96,23 +96,33 @@
             <option value="sawtooth">sawtooth</option>
           </select>
         </div>
-        <div class="control-row">
+        <div class="control-row" data-copy-path="frequency">
           <div class="control-label">
             <span>frequency</span>
-            <span class="control-value" id="val-ch-frequency"></span>
+            <input type="number" class="control-number" id="val-ch-frequency" min="0.5" max="10" step="0.1">
           </div>
           <input type="range" id="ctrl-ch-frequency" min="0.5" max="10" step="0.1">
         </div>
-        <div class="control-row">
+        <div class="control-row" data-copy-path="amplitude">
           <div class="control-label">
             <span>amplitude</span>
-            <span class="control-value" id="val-ch-amplitude"></span>
+            <input type="number" class="control-number" id="val-ch-amplitude" min="0.05" max="1" step="0.01">
           </div>
           <input type="range" id="ctrl-ch-amplitude" min="0.05" max="1" step="0.01">
         </div>
-        <div class="control-row control-row--inline">
-          <div class="control-label"><span>strokeWidth</span></div>
-          <input type="number" id="ctrl-ch-strokeWidth" min="0.1" step="0.1">
+        <div class="control-row" data-copy-path="phase">
+          <div class="control-label">
+            <span>phase</span>
+            <span class="control-value" id="val-ch-phase"></span>
+          </div>
+          <input type="range" id="ctrl-ch-phase" min="0" max="6.28" step="0.01">
+        </div>
+        <div class="control-row" data-copy-path="strokeWidth">
+          <div class="control-label">
+            <span>strokeWidth</span>
+            <input type="number" class="control-number" id="ctrl-ch-strokeWidth" min="0.1" step="0.1">
+          </div>
+          <input type="range" id="ctrl-ch-strokeWidth-range" min="0.1" max="20" step="0.1">
         </div>
       </div>
 
@@ -123,14 +133,14 @@
           <input type="checkbox" id="ctrl-ch-fm-enabled">
         </div>
         <div class="section-controls collapsed" id="ch-fm-controls">
-          <div class="control-row">
+          <div class="control-row" data-copy-path="fm.ratio">
             <div class="control-label">
               <span>ratio</span>
               <span class="control-value" id="val-ch-fm-ratio"></span>
             </div>
             <input type="range" id="ctrl-ch-fm-ratio" min="0.5" max="7" step="0.1">
           </div>
-          <div class="control-row">
+          <div class="control-row" data-copy-path="fm.depth">
             <div class="control-label">
               <span>depth</span>
               <span class="control-value" id="val-ch-fm-depth"></span>
@@ -147,14 +157,14 @@
           <input type="checkbox" id="ctrl-ch-fold-enabled">
         </div>
         <div class="section-controls collapsed" id="ch-fold-controls">
-          <div class="control-row">
+          <div class="control-row" data-copy-path="fold.threshold">
             <div class="control-label">
               <span>threshold</span>
               <span class="control-value" id="val-ch-fold-threshold"></span>
             </div>
             <input type="range" id="ctrl-ch-fold-threshold" min="0.1" max="1" step="0.01">
           </div>
-          <div class="control-row">
+          <div class="control-row" data-copy-path="fold.iterations">
             <div class="control-label">
               <span>iterations</span>
               <span class="control-value" id="val-ch-fold-iterations"></span>
@@ -171,21 +181,21 @@
           <input type="checkbox" id="ctrl-ch-am-enabled">
         </div>
         <div class="section-controls collapsed" id="ch-am-controls">
-          <div class="control-row">
+          <div class="control-row" data-copy-path="am.rate">
             <div class="control-label">
               <span>rate</span>
               <span class="control-value" id="val-ch-am-rate"></span>
             </div>
             <input type="range" id="ctrl-ch-am-rate" min="0.1" max="6" step="0.05">
           </div>
-          <div class="control-row">
+          <div class="control-row" data-copy-path="am.depth">
             <div class="control-label">
               <span>depth</span>
               <span class="control-value" id="val-ch-am-depth"></span>
             </div>
             <input type="range" id="ctrl-ch-am-depth" min="0" max="1" step="0.01">
           </div>
-          <div class="control-row">
+          <div class="control-row" data-copy-path="am.shape">
             <div class="control-label"><span>shape</span></div>
             <select id="ctrl-ch-am-shape">
               <option value="sine">sine</option>
@@ -203,7 +213,7 @@
           <input type="checkbox" id="ctrl-ch-ws-enabled">
         </div>
         <div class="section-controls collapsed" id="ch-ws-controls">
-          <div class="control-row">
+          <div class="control-row" data-copy-path="ws.curve">
             <div class="control-label"><span>curve</span></div>
             <select id="ctrl-ch-ws-curve">
               <option value="tanh">tanh (soft sat)</option>
@@ -211,7 +221,7 @@
               <option value="tube">tube (x - x³/3)</option>
             </select>
           </div>
-          <div class="control-row">
+          <div class="control-row" data-copy-path="ws.drive">
             <div class="control-label">
               <span>drive</span>
               <span class="control-value" id="val-ch-ws-drive"></span>
@@ -228,28 +238,28 @@
           <input type="checkbox" id="ctrl-ch-adsr-enabled">
         </div>
         <div class="section-controls collapsed" id="ch-adsr-controls">
-          <div class="control-row">
+          <div class="control-row" data-copy-path="adsr.attack">
             <div class="control-label">
               <span>attack</span>
               <span class="control-value" id="val-ch-adsr-attack"></span>
             </div>
             <input type="range" id="ctrl-ch-adsr-attack" min="0" max="1" step="0.01">
           </div>
-          <div class="control-row">
+          <div class="control-row" data-copy-path="adsr.decay">
             <div class="control-label">
               <span>decay</span>
               <span class="control-value" id="val-ch-adsr-decay"></span>
             </div>
             <input type="range" id="ctrl-ch-adsr-decay" min="0" max="1" step="0.01">
           </div>
-          <div class="control-row">
+          <div class="control-row" data-copy-path="adsr.sustain">
             <div class="control-label">
               <span>sustain</span>
               <span class="control-value" id="val-ch-adsr-sustain"></span>
             </div>
             <input type="range" id="ctrl-ch-adsr-sustain" min="0" max="1" step="0.01">
           </div>
-          <div class="control-row">
+          <div class="control-row" data-copy-path="adsr.release">
             <div class="control-label">
               <span>release</span>
               <span class="control-value" id="val-ch-adsr-release"></span>
@@ -278,6 +288,61 @@
       </div>
     </div>
 
+    <!-- XY Mode -->
+    <div class="section">
+      <div class="section-header">
+        <span class="section-title">XY Mode</span>
+        <input type="checkbox" id="ctrl-xy-enabled">
+      </div>
+      <div class="section-controls collapsed" id="xy-controls">
+        <div class="control-row">
+          <div class="control-label"><span>X axis</span></div>
+          <select id="ctrl-xy-chX">
+            <option value="0">CH 1</option>
+            <option value="1">CH 2</option>
+            <option value="2">CH 3</option>
+            <option value="3">CH 4</option>
+          </select>
+        </div>
+        <div class="control-row">
+          <div class="control-label"><span>Y axis</span></div>
+          <select id="ctrl-xy-chY">
+            <option value="0">CH 1</option>
+            <option value="1" selected>CH 2</option>
+            <option value="2">CH 3</option>
+            <option value="3">CH 4</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Animate -->
+    <div class="section">
+      <div class="section-header">
+        <span class="section-title">Animate</span>
+        <input type="checkbox" id="ctrl-anim-enabled">
+      </div>
+      <div class="section-controls collapsed" id="anim-controls">
+        <div class="control-row">
+          <div class="control-label">
+            <span>speed</span>
+            <span class="control-value" id="val-anim-speed"></span>
+          </div>
+          <input type="range" id="ctrl-anim-speed" min="0.05" max="3" step="0.05">
+        </div>
+        <div class="control-row">
+          <div class="control-label">
+            <span>duration</span>
+            <span class="control-value" id="val-anim-duration"></span>
+          </div>
+          <input type="range" id="ctrl-anim-duration" min="1" max="10" step="1">
+        </div>
+        <div class="export-buttons">
+          <button id="btn-record">Record WebM</button>
+        </div>
+      </div>
+    </div>
+
     <!-- CRT Mode -->
     <div class="section">
       <div class="section-header">
@@ -292,14 +357,7 @@
           </div>
           <input type="range" id="ctrl-crt-resolution" min="80" max="640" step="8">
         </div>
-        <div class="control-row">
-          <div class="control-label">
-            <span>glow</span>
-            <span class="control-value" id="val-crt-glow"></span>
-          </div>
-          <input type="range" id="ctrl-crt-glow" min="0" max="1" step="0.05">
-        </div>
-        <div class="sub-toggle-row">
+<div class="sub-toggle-row">
           <input type="checkbox" id="ctrl-crt-scanlines">
           <label for="ctrl-crt-scanlines">grid</label>
         </div>
@@ -310,8 +368,14 @@
     <div class="section">
       <span class="section-title">Export</span>
       <div class="export-buttons">
-        <button id="btn-copy">Copy transparent PNG</button>
-        <button id="btn-download">Download transparent PNG</button>
+        <button id="btn-copy">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+          Copy PNG
+        </button>
+        <button id="btn-download">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download PNG
+        </button>
       </div>
     </div>
   </div>
