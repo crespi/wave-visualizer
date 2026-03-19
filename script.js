@@ -646,7 +646,6 @@ bindCRTToggle('ctrl-crt-scanlines',  () => CONFIG.crt.scanlines,  v => { CONFIG.
     function applyColor(v) {
       getC().color[key] = v;
       const css = chColorCss(getC());
-      document.getElementById('ch-editor-dot').style.background = css;
       document.querySelector(`#ch-row-${activeChannel} .ch-dot`).style.background = css;
       scheduleRender();
     }
@@ -723,6 +722,34 @@ bindCRTToggle('ctrl-crt-scanlines',  () => CONFIG.crt.scanlines,  v => { CONFIG.
     const el = document.getElementById(`ctrl-xy-${key}`);
     el.value = CONFIG.xy[key];
     el.addEventListener('change', () => { CONFIG.xy[key] = parseInt(el.value); scheduleRender(); });
+  });
+
+  // Distribute buttons
+  function distributeChannels(spread) {
+    const enabled = CONFIG.channels.filter(ch => ch.enabled);
+    if (enabled.length === 0) return;
+    if (enabled.length === 1) {
+      enabled[0].offsetY = 0;
+    } else {
+      enabled.forEach((ch, i) => {
+        ch.offsetY = -spread + (2 * spread / (enabled.length - 1)) * i;
+      });
+    }
+    const activeCh = CONFIG.channels[activeChannel];
+    if (activeCh.enabled) {
+      document.getElementById('ctrl-ch-offsetY').value = activeCh.offsetY;
+      document.getElementById('val-ch-offsetY').value = activeCh.offsetY.toFixed(2);
+    }
+    scheduleRender();
+  }
+
+  [
+    ['btn-dist-stack',  0],
+    ['btn-dist-tight',  0.3],
+    ['btn-dist-normal', 0.6],
+    ['btn-dist-wide',   1.0],
+  ].forEach(([id, spread]) => {
+    document.getElementById(id).addEventListener('click', () => distributeChannels(spread));
   });
 
   initCopyMenu();
@@ -849,8 +876,6 @@ function updateEditorUI() {
   const fi = v => Math.round(v).toString();
 
   const css = chColorCss(ch);
-  document.getElementById('ch-editor-title').textContent = `CH ${activeChannel + 1}`;
-  document.getElementById('ch-editor-dot').style.background = css;
   document.querySelector(`#ch-row-${activeChannel} .ch-dot`).style.background = css;
   document.getElementById('ch-editor').classList.toggle('ch-editor--disabled', !ch.enabled);
 
